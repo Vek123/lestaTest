@@ -28,8 +28,9 @@ class BaseQueue(BaseQueueAbstract):
     _buffer_size: int
     length: int
 
-    def __init__(self):
+    def __init__(self, rewritable: bool = True):
         self.length = 0
+        self.rewritable = rewritable
 
     def __iter__(self):
         return self
@@ -58,13 +59,14 @@ class QueueList(BaseQueue):
             buffer_size: Optional[int] = None,
             rewritable: bool = True
     ):
-        super().__init__()
+        super().__init__(rewritable)
         # At least one of them must be not None
         if buffer_size is None and buffer is None:
             raise Exception("buffer_size or buffer should be not None")
         if buffer_size is not None and buffer_size <= 0:
             raise Exception("buffer_size should be > 0")
-        self.rewritable = rewritable
+        if buffer is not None and len(buffer) == 0:
+            raise Exception("buffer length should be > 0")
         if buffer_size is not None:
             self.buffer = [None] * buffer_size
             self._buffer_size = buffer_size
@@ -165,8 +167,9 @@ class QueueLinked(BaseQueue):
     def __init__(
             self,
             buffer_size: int,
+            rewritable: bool = True,
     ):
-        super().__init__()
+        super().__init__(rewritable)
         self._buffer_size = buffer_size
         self.left = None
         self.right = None
@@ -184,6 +187,8 @@ class QueueLinked(BaseQueue):
         return val
 
     def _add_one(self, val: Any):
+        if self.length >= self._buffer_size and not self.rewritable:
+            raise Exception("Buffer is not rewritable")
         insert = QueueItem(val)
         if self.left is None:
             self.left = insert
@@ -219,47 +224,55 @@ class QueueLinked(BaseQueue):
                 self._add_one(sub)
 
 
-# fifo1 = QueueList(buffer_size=4, rewritable=True)
-# fifo1.append(1, 2)
-# next(fifo1)
-# fifo1.append([3, 4, 5])
-# fifo1.change_buffer(2, True)
-# assert fifo1.buffer == [4, 5]
-# fifo1.append(6, 7)
-# fifo1.append(8, 9)
-# result = []
-# for i in fifo1:
-#     result.append(i)
-# assert result == [8, 9]
+fifo1 = QueueList(buffer_size=4, rewritable=True)
+fifo1.append(1, 2)
+assert next(fifo1) == 1
+fifo1.append([3, 4, 5])
+fifo1.change_buffer(2, True)
+assert fifo1.buffer == [4, 5]
+fifo1.append(6, 7)
+fifo1.append(8, 9)
+result = []
+for i in fifo1:
+    result.append(i)
+assert result == [8, 9]
 
 # fifo2 = QueueLinked(buffer_size=5)
 # fifo2.append(1, 2, 3, 4, 5, 6, 7, 8)
-# for _ in range(2):
-#     print(next(fifo2))
+# res = []
+# for i in range(2):
+#     res.append(next(fifo2))
+# assert res == [4, 5]
 # fifo2.change_buffer(2, True)
+# assert fifo2.left.val == 7
+# res.clear()
 # for i in fifo2:
-#     print(i)
+#     res.append(i)
+# assert res == [7, 8]
 # fifo2.change_buffer(3)
 # fifo2.append(9, 10, 11)
+# res.clear()
 # for i in fifo2:
-#     print(i)
-
-# class Stress:
-#     @staticmethod
-#     def start_stress(que: BaseQueue):
-#         for k in range(5, 1000, 5):
-#             que.change_buffer(k)
-#             for i in range(1000):
-#                 que.append([i] * i)
-#             for _ in que:
-#                 ...
+#     res.append(i)
+# assert res == [9, 10, 11]
 
 
-fifo1 = QueueList(buffer_size=10)
-start = time.time()
-Stress.start_stress(fifo1)
-print(f"Time: {time.time() - start}")
-fifo2 = QueueLinked(buffer_size=10)
-start = time.time()
-Stress.start_stress(fifo2)
-print(f"Time: {time.time() - start}")
+class Stress:
+    @staticmethod
+    def start_stress(que: BaseQueue):
+        for k in range(5, 1000, 5):
+            que.change_buffer(k)
+            for i in range(1000):
+                que.append([i] * i)
+            for _ in que:
+                ...
+
+
+# fifo1 = QueueList(buffer_size=10)
+# start = time.time()
+# Stress.start_stress(fifo1)
+# print(f"Time: {time.time() - start}")
+# fifo2 = QueueLinked(buffer_size=10)
+# start = time.time()
+# Stress.start_stress(fifo2)
+# print(f"Time: {time.time() - start}")
