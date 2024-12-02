@@ -10,16 +10,13 @@ class BaseQueueAbstract(ABC):
     length: int
 
     @abstractmethod
-    def __len__(self):
-        ...
+    def __len__(self): ...
 
     @abstractmethod
-    def append(self, val):
-        ...
+    def append(self, val): ...
 
     @abstractmethod
-    def change_buffer(self, buffer_size: int, save_last: bool = False):
-        ...
+    def change_buffer(self, buffer_size: int, save_last: bool = False): ...
 
 
 class BaseQueue(BaseQueueAbstract):
@@ -38,10 +35,21 @@ class BaseQueue(BaseQueueAbstract):
     def __len__(self):
         return self.length
 
-    def append(self, val):
+    def append(self, val: Any):
+        """
+        Add any value to the buffer
+        :param val:
+        :return:
+        """
         pass
 
     def change_buffer(self, buffer_size: int, save_last: bool = False):
+        """
+        Change buffer size
+        :param buffer_size:
+        :param save_last:
+        :return:
+        """
         pass
 
 
@@ -49,15 +57,16 @@ class QueueList(BaseQueue):
     """
     Class implements cycle buffer FIFO using list to store it.
     """
+
     buffer: list
     _left_index: int = 0
     _right_index: int = 0
 
     def __init__(
-            self,
-            buffer: Optional[List[Any]] = None,
-            buffer_size: Optional[int] = None,
-            rewritable: bool = True
+        self,
+        buffer: Optional[List[Any]] = None,
+        buffer_size: Optional[int] = None,
+        rewritable: bool = True,
     ):
         super().__init__(rewritable)
         # At least one of them must be not None
@@ -125,11 +134,6 @@ class QueueList(BaseQueue):
         self._right_index = self.length % self._buffer_size
 
     def append(self, *val: Any) -> None:
-        """
-        Append values to the end of existing queue
-        :param val:
-        :return:
-        """
         for sub in val:
             if isinstance(sub, list):
                 for i in sub:
@@ -144,10 +148,10 @@ class QueueItem(object):
     prev_item: "QueueItem"
 
     def __init__(
-            self,
-            val: Any,
-            prev_item: Optional["QueueItem"] = None,
-            next_item: Optional["QueueItem"] = None
+        self,
+        val: Any,
+        prev_item: Optional["QueueItem"] = None,
+        next_item: Optional["QueueItem"] = None,
     ):
         self.val = val
         self.next_item = next_item
@@ -161,13 +165,14 @@ class QueueLinked(BaseQueue):
     """
     Class implements cycle buffer FIFO using linked list to store it.
     """
+
     left: QueueItem | None
     right: QueueItem | None
 
     def __init__(
-            self,
-            buffer_size: int,
-            rewritable: bool = True,
+        self,
+        buffer_size: int,
+        rewritable: bool = True,
     ):
         super().__init__(rewritable)
         self._buffer_size = buffer_size
