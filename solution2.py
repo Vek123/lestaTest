@@ -41,7 +41,7 @@ class BaseQueue(BaseQueueAbstract):
         :param val:
         :return:
         """
-        pass
+        raise NotImplementedError()
 
     def change_buffer(self, buffer_size: int, save_last: bool = False):
         """
@@ -50,7 +50,7 @@ class BaseQueue(BaseQueueAbstract):
         :param save_last:
         :return:
         """
-        pass
+        raise NotImplementedError()
 
 
 class QueueList(BaseQueue):
